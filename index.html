@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token vs Compute Reality</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 { margin-bottom: 5px; }
+        p { color: #94a3b8; }
+
+        select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            width: 280px;
+        }
+
+        .title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .tokens {
+            font-size: 16px;
+            color: #cbd5f5;
+        }
+
+        .ncu {
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .low { color: #22c55e; }
+        .high { color: #ef4444; }
+
+        .highlight {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #facc15;
+        }
+
+        .insight {
+            margin-top: 8px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #f87171;
+        }
+
+        .details {
+            display: none;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .toggle-btn {
+            margin-top: 15px;
+            background: #334155;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Token vs Compute Reality</h1>
+<p>Why token-based pricing fails</p>
+
+<select id="scenario">
+    <option value="A">Scenario A — Same tokens, different work</option>
+    <option value="B">Scenario B — Different tokens, same work</option>
+</select>
+
+<br>
+
+<button onclick="runDemo()">Run Demo</button>
+
+<div id="output"></div>
+
+<script>
+async function runDemo() {
+    const scenario = document.getElementById("scenario").value;
+
+    const res = await fetch("/run", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ scenario })
+    });
+
+    const data = await res.json();
+    render(data);
+}
+
+function toggleDetails() {
+    const sections = document.querySelectorAll(".details");
+    sections.forEach(s => {
+        s.style.display = s.style.display === "block" ? "none" : "block";
+    });
+}
+
+function render(data) {
+    const w1 = data.workflow_1;
+    const w2 = data.workflow_2;
+
+    const w1Higher = w1.ncu > w2.ncu;
+
+    document.getElementById("output").innerHTML = `
+        <div class="highlight">${data.message}</div>
+        <div class="insight">⚡ ${data.insight}</div>
+
+        <div class="container">
+
+            <div class="card">
+                <div class="title">Simple</div>
+                <div class="tokens">Tokens: ${w1.tokens}</div>
+                <div class="ncu ${w1Higher ? 'high' : 'low'}">NCU: ${w1.ncu}</div>
+
+                <div class="details">
+                    <div>Token Cost: $${w1.token_cost}</div>
+                    <div>Compute Cost: $${w1.compute_cost}</div>
+                    <div>Model calls: ${w1.details.model_calls}</div>
+                    <div>Retries: ${w1.details.retries}</div>
+                    <div>Tool calls: ${w1.details.tool_calls}</div>
+                    ${w1.adjusted ? '<div>⚠ Adjusted to fit budget</div>' : ''}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="title">Agentic</div>
+                <div class="tokens">Tokens: ${w2.tokens}</div>
+                <div class="ncu ${!w1Higher ? 'high' : 'low'}">NCU: ${w2.ncu}</div>
+
+                <div class="details">
+                    <div>Token Cost: $${w2.token_cost}</div>
+                    <div>Compute Cost: $${w2.compute_cost}</div>
+                    <div>Model calls: ${w2.details.model_calls}</div>
+                    <div>Retries: ${w2.details.retries}</div>
+                    <div>Tool calls: ${w2.details.tool_calls}</div>
+                    ${w2.adjusted ? '<div>⚠ Adjusted to fit budget</div>' : ''}
+                </div>
+            </div>
+
+        </div>
+
+        <button class="toggle-btn" onclick="toggleDetails()">Show / Hide Details</button>
+
+        <div class="note">
+            Tokens measure text. NCU reflects actual work.
+        </div>
+    `;
+}
+</script>
+
+</body>
+</html>
