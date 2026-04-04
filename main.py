@@ -1,48 +1,54 @@
 import random
+from typing import Any
+
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="Token vs NCU Demo")
 
 MAX_NCU_BUDGET = 15
 
-# MODEL PROFILES
-MODEL_PROFILES = {
+MODEL_PROFILES: dict[str, dict[str, float]] = {
     "chatgpt": {"token_multiplier": 1.00, "ncu_weight": 1.00},
-    "claude": {"token_multiplier": 1.05, "ncu_weight": 1.03},
-    "gemini": {"token_multiplier": 0.95, "ncu_weight": 0.98},
+    "claude": {"token_multiplier": 1.03, "ncu_weight": 1.04},
+    "gemini": {"token_multiplier": 0.97, "ncu_weight": 0.98},
 }
 
-# QUERY BANK
-QUERY_BANK = {
-    "simple": {
-        "prompt": "Summarize this paragraph in one sentence.",
-        "response": "A concise summary capturing the core idea."
-    },
-    "average": {
-        "prompt": "Explain how APIs work with an example.",
-        "response": "APIs allow systems to communicate, like a weather app fetching data."
-    },
-    "multi": {
-        "prompt": "Compare REST vs GraphQL and give use cases.",
-        "response": "REST uses fixed endpoints, GraphQL enables flexible queries."
-    },
-    "agentic": {
-        "prompt": "Plan a trip with budget, tools, and alternatives.",
-        "response": "Includes flights, hotels, tools, and backup options if plans change."
-    }
+MODEL_LABELS: dict[str, str] = {
+    "chatgpt": "ChatGPT 5.2",
+    "claude": "Claude 3.x",
+    "gemini": "Gemini 3.0",
+}
+
+QUERY_PRESETS: dict[str, str] = {
+    "simple": "Summarize this paragraph in one sentence.",
+    "average": "Explain how APIs work with an example.",
+    "multi": "Compare REST vs GraphQL and give use cases.",
+    "agentic": "Plan a trip with budget, tools, and alternatives.",
+}
+
+QUERY_LABELS: dict[str, str] = {
+    "simple": "Simple query",
+    "average": "Average query",
+    "multi": "Multi-step workflow",
+    "agentic": "Agentic workflow",
+}
+
+SCENARIO_LABELS: dict[str, str] = {
+    "A": "Similar tokens vs different compute",
+    "B": "Different tokens vs similar compute",
 }
 
 
-def calculate_ncu(model_calls, retries, tool_calls, branching, latency, weight):
-    base = (model_calls * 2) + (retries * 1.5) + (tool_calls * 2) + branching + latency
-    return base * weight
+def calculate_ncu(model_calls: int, retries: int, tool_calls: int, branching: int, latency_factor: float, ncu_weight: float) -> float:
+    base_ncu = (model_calls * 2) + (retries * 1.5) + (tool_calls * 2) + branching + latency_factor
+    return base_ncu * ncu_weight
 
 
-def enforce_budget(model_calls, retries, tool_calls, branching, weight):
+def enforce_budget(model_calls: int, retries: int, tool_calls: int, branching: int, ncu_weight: float) -> tuple[int, int, int, bool]:
     adjusted = False
 
-    while calculate_ncu(model_calls, retries, tool_calls, branching, 3, weight) > MAX_NCU_BUDGET:
+    while calculate_ncu(model_calls, retries, tool_calls, branching, latency_factor=3, ncu_weight=ncu_weight) > MAX_NCU_BUDGET:
         if retries > 0:
             retries -= 1
             adjusted = True
@@ -55,19 +61,30 @@ def enforce_budget(model_calls, retries, tool_calls, branching, weight):
     return model_calls, retries, tool_calls, adjusted
 
 
-def model_tokens(base_tokens, multiplier):
-    return max(1, int(base_tokens * multiplier + random.randint(-20, 20)))
+def model_tokens(base_tokens: int, token_multiplier: float) -> int:
+    variation = random.randint(-8, 8)
+    return max(1, int(round(base_tokens * token_multiplier + variation)))
 
 
-def build_workflow(base_tokens, model_calls, retries, tool_calls, profile, latency=None, branching=None):
-    branching = branching if branching is not None else random.randint(1, 3)
-
+def build_workflow(
+    base_tokens: int,
+    model_calls: int,
+    retries: int,
+    tool_calls: int,
+    profile: dict[str, float],
+    latency_factor: float | None = None,
+    branching: int | None = None,
+) -> dict[str, Any]:
+    branching = random.randint(1, 3) if branching is None else branching
     calls, retries, tools, adjusted = enforce_budget(
-        model_calls, retries, tool_calls, branching, profile["ncu_weight"]
+        model_calls,
+        retries,
+        tool_calls,
+        branching,
+        profile["ncu_weight"],
     )
 
-    latency = latency if latency is not None else random.uniform(0, 3)
-
+    latency = random.uniform(0, 3) if latency_factor is None else latency_factor
     ncu = calculate_ncu(calls, retries, tools, branching, latency, profile["ncu_weight"])
 
     return {
@@ -77,66 +94,87 @@ def build_workflow(base_tokens, model_calls, retries, tool_calls, profile, laten
             "model_calls": calls,
             "retries": retries,
             "tool_calls": tools,
-            "branching": branching
+            "branching": branching,
         },
-        "adjusted": adjusted
+        "adjusted": adjusted,
     }
 
 
-@app.get("/", response_class=HTMLResponse)
-def home():
-    with open("index.html") as f:
-        return f.read()
+def build_comparison(model_label: str, query_label: str, scenario: str) -> dict[str, str]:
+    return {
+        "model": model_label,
+        "query": query_label,
+        "scenario": SCENARIO_LABELS.get(scenario, "Unknown scenario"),
+    }
+
+
+@app.get("/")
+def home() -> FileResponse:
+    return FileResponse("index.html")
 
 
 @app.post("/run")
-def run(payload: dict):
+def run(payload: dict[str, Any]) -> dict[str, Any]:
+    scenario = str(payload.get("scenario", "A")).upper()
+    model = str(payload.get("model", "chatgpt")).lower()
+    query = str(payload.get("query", "simple")).lower()
 
-    scenario = payload.get("scenario", "A")
-    model = payload.get("model", "chatgpt")
-    query = payload.get("query", "simple")
+    random.seed(f"{scenario}-{model}-{query}")
 
     profile = MODEL_PROFILES.get(model, MODEL_PROFILES["chatgpt"])
-    query_data = QUERY_BANK.get(query, QUERY_BANK["simple"])
+    model_label = MODEL_LABELS.get(model, MODEL_LABELS["chatgpt"])
+    query_label = QUERY_LABELS.get(query, QUERY_LABELS["simple"])
+    prompt = QUERY_PRESETS.get(query, QUERY_PRESETS["simple"])
 
-    prompt = query_data["prompt"]
-    response_text = query_data["response"]
+    base_response: dict[str, Any] = {
+        "scenario": scenario,
+        "model": model,
+        "model_label": model_label,
+        "query": query,
+        "comparison": build_comparison(model_label, query_label, scenario),
+        "prompt": prompt,
+    }
 
-    # SCENARIO A
     if scenario == "A":
-        w1 = build_workflow(800, 1, 0, 0, profile)
-        w2 = build_workflow(800, 3, 2, 2, profile)
-
-        ratio = round(w2["ncu"] / w1["ncu"], 2)
-
         return {
-            "scenario": "A",
-            "prompt": prompt,
-            "response": response_text,
-            "message": "⚠ Same tokens, but significantly more actual work",
-            "insight": f"⚡ {ratio}x more compute due to execution complexity",
-            "workflow_1": w1,
-            "workflow_2": w2
+            **base_response,
+            "headline": "Same tokens, different execution complexity",
+            "insight": "Token counts look similar, but NCU diverges due to execution mechanics.",
+            "result_a": build_workflow(800, model_calls=1, retries=0, tool_calls=0, profile=profile),
+            "result_b": build_workflow(800, model_calls=3, retries=2, tool_calls=2, profile=profile),
         }
 
-    # SCENARIO B (STRONG TOKEN GAP)
     if scenario == "B":
         shared_latency = random.uniform(0, 3)
         shared_branching = random.randint(1, 3)
-
-        w1 = build_workflow(1600, 2, 1, 1, profile, shared_latency, shared_branching)
-        w2 = build_workflow(400, 2, 1, 1, profile, shared_latency, shared_branching)
-
-        token_gap = abs(w1["tokens"] - w2["tokens"])
-
         return {
-            "scenario": "B",
-            "prompt": prompt,
-            "response": response_text,
-            "message": "⚠ Different tokens, same actual work",
-            "insight": f"⚡ Same execution, but {token_gap} token difference",
-            "workflow_1": w1,
-            "workflow_2": w2
+            **base_response,
+            "headline": "Different tokens, similar execution profile",
+            "insight": "Token counts differ, but NCU remains close when execution mechanics stay the same.",
+            "result_a": build_workflow(
+                1200,
+                model_calls=2,
+                retries=1,
+                tool_calls=1,
+                profile=profile,
+                latency_factor=shared_latency,
+                branching=shared_branching,
+            ),
+            "result_b": build_workflow(
+                600,
+                model_calls=2,
+                retries=1,
+                tool_calls=1,
+                profile=profile,
+                latency_factor=shared_latency,
+                branching=shared_branching,
+            ),
         }
 
-    return {"error": "Invalid scenario"}
+    return {
+        **base_response,
+        "headline": "Invalid scenario",
+        "insight": "Use scenario A or B.",
+        "result_a": {},
+        "result_b": {},
+    }
