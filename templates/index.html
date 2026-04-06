@@ -347,7 +347,7 @@ function renderFromBackend(data){
       <div class="text-5xl font-extrabold text-blue-400 ncu-core">${ncu}</div>
       <div class="text-sm text-blue-300 mt-2">NCU — Normalized Compute Unit</div>
       <div class="text-xs text-yellow-400 mt-2 font-semibold">
-  ⚡ <span id="ampVal">0</span>x compute signal
+  ⚡ <span id="ampVal">0</span>x efficiency
 </div>
       <div class="text-xs text-gray-400 mt-2">
         Inflation: ${r.inflation_factor}x | Effective Tokens: ${effective}
@@ -388,7 +388,7 @@ function renderFromBackend(data){
 
 </div>
       <div class="mt-4 text-center text-sm font-semibold text-yellow-400">
-        Savings: ${r.savings_percent}%
+        Savings: ${r.savings_percent > 0 ? "+" : ""}${r.savings_percent}%
       </div>
 
     </div>
@@ -431,8 +431,8 @@ setTimeout(()=>{
   animateValue("tokensVal", tokens, 0)
 
   // ⚡ ADD THIS (DO NOT REMOVE ANYTHING)
-  const amp = ncu / (tokens || 1)
-  animateValue("ampVal", amp, 2)
+ const efficiency = tokenCost / (ncuCost || 1)
+animateValue("ampVal", efficiency, 2)
 
 },200)
 
@@ -487,21 +487,24 @@ setTimeout(()=>{
   animateValue("cmpTokens", tokens, 0)
 animateValue("cmpNCU", ncu, 2)
 
-  tCostEl.innerText = "Cost: $" + tokenCost.toFixed(2)
-  nCostEl.innerText = "Cost: $" + ncuCost.toFixed(2)
+const displayTokenCost = tokenCost * 10
+const displayNCUCost = ncuCost * 10
 
-  let insight = ""
+tCostEl.innerText = "Cost: $" + displayTokenCost.toFixed(2)
+nCostEl.innerText = "Cost: $" + displayNCUCost.toFixed(2)
+ const savings = ((tokenCost - ncuCost) / tokenCost) * 100
+const delta = tokenCost - ncuCost
+const efficiency = tokenCost / (ncuCost || 1)
 
-  if(ncu < tokens){
-    insight = "Tokens overestimate compute — actual work is lower"
-  } else if(ncu > tokens){
-    insight = "Tokens underestimate compute — actual work is higher"
-  } else {
-    insight = "Tokens align with compute"
-  }
+let insight = ""
 
-  insightEl.innerText = insight
+if(ncuCost < tokenCost){
+  insight = `+${savings.toFixed(1)}% savings | $${(delta * 10).toFixed(2)} saved | ${efficiency.toFixed(2)}x more efficient`
+} else {
+  insight = `NCU not optimal | $${Math.abs(delta).toFixed(2)} extra | ${efficiency.toFixed(2)}x`
+}
 
+insightEl.innerText = insight
 },200)
 }
 document.getElementById("runBtn").onclick = async () => {

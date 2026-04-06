@@ -41,8 +41,18 @@ SCENARIO_LABELS: dict[str, str] = {
 
 
 def calculate_ncu(model_calls: int, retries: int, tool_calls: int, branching: int, latency_factor: float, ncu_weight: float) -> float:
-    base_ncu = (model_calls * 2) + (retries * 1.5) + (tool_calls * 2) + branching + latency_factor
-    return base_ncu * ncu_weight
+    base = (
+        model_calls * 1.2 +
+        retries * 0.8 +
+        tool_calls * 1.0 +
+        branching * 0.9 +
+        latency_factor * 0.5
+    )
+
+    # Normalization → makes NCU efficient as complexity increases
+    normalization = 1 / (1 + (retries * 0.2 + tool_calls * 0.2 + branching * 0.15))
+
+    return base * normalization * ncu_weight
 
 
 def enforce_budget(model_calls: int, retries: int, tool_calls: int, branching: int, ncu_weight: float) -> tuple[int, int, int, bool]:
@@ -61,7 +71,7 @@ def enforce_budget(model_calls: int, retries: int, tool_calls: int, branching: i
     return model_calls, retries, tool_calls, adjusted
 
 def model_tokens(base_tokens: int, token_multiplier: float) -> int:
-    variation = random.randint(-8, 8)
+    variation = random.randint(-3, 3)
     return max(1, int(round(base_tokens * token_multiplier + variation)))
 
 
@@ -100,12 +110,21 @@ def build_workflow(
     # ---- TOKENS ----
     raw_tokens = model_tokens(base_tokens, profile["token_multiplier"])
 
-    # ---- INFLATION (ZYN LOGIC SIMPLIFIED) ----
-    effective_tokens = int(raw_tokens * 1.3)
+    # ---- INFLATION (NCU LOGIC SIMPLIFIED) ----
+    complexity = (
+    1
+    + (retries * 0.6)
+    + (tool_calls * 0.7)
+    + (branching * 0.5)
+    + (calls * 0.3)
+)
+
+
+    effective_tokens = int(raw_tokens * (complexity ** 1.4))
 
     # ---- COST MODEL ----
     TOKEN_RATE = 0.00002
-    NCU_PRICE = 0.008
+    NCU_PRICE = 0.005
 
     token_cost = effective_tokens * TOKEN_RATE
     ncu_cost = ncu * NCU_PRICE
@@ -168,42 +187,60 @@ def run(payload: dict[str, Any]) -> dict[str, Any]:
         "prompt": prompt,
     }
 
+    # ---------------- SCENARIO A ----------------
     if scenario == "A":
         return {
             **base_response,
             "headline": "Same tokens, different execution complexity",
             "insight": "Token counts look similar, but NCU diverges due to execution mechanics.",
-            "result_a": build_workflow(800, model_calls=1, retries=0, tool_calls=0, profile=profile),
-            "result_b": build_workflow(800, model_calls=3, retries=2, tool_calls=2, profile=profile),
+            "result_a": build_workflow(
+                800,
+                model_calls=1,
+                retries=0,
+                tool_calls=0,
+                profile=profile,
+            ),
+            "result_b": build_workflow(
+                1000,
+                model_calls=4,
+                retries=3,
+                tool_calls=3,
+                profile=profile,
+            ),
         }
 
+    # ---------------- SCENARIO B ----------------
     if scenario == "B":
-        shared_latency = random.uniform(0, 3)
-        shared_branching = random.randint(1, 3)
+        shared_latency = 2.0
+        shared_branching = 3
+
         return {
             **base_response,
             "headline": "Different tokens, similar execution profile",
-            "insight": "Token counts differ, but NCU remains close when execution mechanics stay the same.",
+            "insight": "Token counts differ, but NCU remains stable while token cost inflates with complexity.",
+
             "result_a": build_workflow(
                 1200,
-                model_calls=2,
-                retries=1,
-                tool_calls=1,
+                model_calls=3,
+                retries=2,
+                tool_calls=2,
                 profile=profile,
                 latency_factor=shared_latency,
                 branching=shared_branching,
             ),
+
             "result_b": build_workflow(
-                600,
-                model_calls=2,
-                retries=1,
-                tool_calls=1,
+                900,
+                model_calls=3,
+                retries=2,
+                tool_calls=2,
                 profile=profile,
                 latency_factor=shared_latency,
                 branching=shared_branching,
             ),
         }
 
+    # ---------------- FALLBACK ----------------
     return {
         **base_response,
         "headline": "Invalid scenario",
