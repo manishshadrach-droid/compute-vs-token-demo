@@ -60,7 +60,6 @@ def enforce_budget(model_calls: int, retries: int, tool_calls: int, branching: i
 
     return model_calls, retries, tool_calls, adjusted
 
-
 def model_tokens(base_tokens: int, token_multiplier: float) -> int:
     variation = random.randint(-8, 8)
     return max(1, int(round(base_tokens * token_multiplier + variation)))
@@ -75,7 +74,9 @@ def build_workflow(
     latency_factor: float | None = None,
     branching: int | None = None,
 ) -> dict[str, Any]:
+
     branching = random.randint(1, 3) if branching is None else branching
+
     calls, retries, tools, adjusted = enforce_budget(
         model_calls,
         retries,
@@ -83,13 +84,45 @@ def build_workflow(
         branching,
         profile["ncu_weight"],
     )
-
+    
+    print("PROFILE:", profile)
     latency = random.uniform(0, 3) if latency_factor is None else latency_factor
-    ncu = calculate_ncu(calls, retries, tools, branching, latency, profile["ncu_weight"])
+
+    ncu = calculate_ncu(
+        calls,
+        retries,
+        tools,
+        branching,
+        latency,
+        profile["ncu_weight"]
+    )
+
+    # ---- TOKENS ----
+    raw_tokens = model_tokens(base_tokens, profile["token_multiplier"])
+
+    # ---- INFLATION (ZYN LOGIC SIMPLIFIED) ----
+    effective_tokens = int(raw_tokens * 1.3)
+
+    # ---- COST MODEL ----
+    TOKEN_RATE = 0.00002
+    NCU_PRICE = 0.008
+
+    token_cost = effective_tokens * TOKEN_RATE
+    ncu_cost = ncu * NCU_PRICE
+
+    savings = 0
+    if token_cost > 0:
+        savings = ((token_cost - ncu_cost) / token_cost) * 100
 
     return {
-        "tokens": model_tokens(base_tokens, profile["token_multiplier"]),
+        "raw_tokens": int(raw_tokens),
+        "effective_tokens": int(effective_tokens),
+        "inflation_factor": round(effective_tokens / raw_tokens, 2),
         "ncu": round(ncu, 2),
+        "token_cost": round(token_cost, 6),
+        "ncu_cost": round(ncu_cost, 6),
+        "savings_percent": round(savings, 2),
+
         "details": {
             "model_calls": calls,
             "retries": retries,
@@ -110,7 +143,7 @@ def build_comparison(model_label: str, query_label: str, scenario: str) -> dict[
 
 @app.get("/")
 def home() -> FileResponse:
-    return FileResponse("index.html")
+    return FileResponse("templates/index.html")
 
 
 @app.post("/run")
