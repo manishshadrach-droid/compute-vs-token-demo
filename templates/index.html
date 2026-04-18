@@ -1,551 +1,340 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>NCU vs Tokens</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Token vs NCU Demo</title>
 
 <style>
-body { background:#0d111a; color:#eef2ff; font-family:Inter,sans-serif; }
-
-/* --- FIX: prevent grid clipping --- */
-main {
-  position: relative;
-  z-index: 1;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-.grid {
-  overflow: visible !important;
+body{
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#081224,#0f172a,#1e293b);
+  color:white;
+  min-height:100vh;
+  padding:36px;
 }
 
-/* --- cards --- */
-.metric-card {
-  border:1px solid rgba(130,168,255,0.15);
-  border-radius:12px;
-  padding:20px;
-  background:#141b2d;
-
-  position: relative;
-  z-index: 1;
+h1{
+  font-size:54px;
+  font-weight:800;
+  margin-bottom:28px;
+  text-align:center;
 }
 
-/* --- dropdown base --- */
-.dropdown {
-  position: relative;
+.top{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:26px;
+  justify-content:center;
 }
 
-/* --- selected box (UPGRADED) --- */
-.selected {
-  padding:12px;
-  border-radius:12px;
+select,button{
+  padding:14px 18px;
+  border:none;
+  border-radius:14px;
+  font-size:15px;
+}
 
-  background: linear-gradient(145deg, #1a2338, #111827);
-  border:1px solid rgba(255,255,255,0.08);
+select{
+  min-width:260px;
+  background:#1e293b;
+  color:white;
+}
 
+button{
+  background:#2563eb;
+  color:white;
+  font-weight:700;
   cursor:pointer;
-
-  transition: all 0.2s ease;
 }
 
-.selected:hover {
-  border-color: rgba(96,165,250,0.5);
-  box-shadow: 0 0 12px rgba(96,165,250,0.2);
+button:hover{
+  opacity:.92;
 }
 
-/* --- PREMIUM DROPDOWN --- */
-.options {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 100%;
-
-  background: rgba(20,27,45,0.85);
-  backdrop-filter: blur(12px);
-
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-
-  z-index: 99999;
-
-  box-shadow:
-    0 20px 40px rgba(0,0,0,0.5),
-    0 0 0 1px rgba(255,255,255,0.03) inset;
-
-  max-height:260px;
-  overflow-y:auto;
-
-  opacity:0;
-  transform: translateY(-8px) scale(0.98);
-  transition: all 0.2s ease;
-
-  pointer-events:none;
-
-  isolation: isolate;
+.headline{
+  font-size:28px;
+  font-weight:800;
+  color:#93c5fd;
+  margin-bottom:18px;
+  text-align:center;
 }
 
-/* --- SHOW STATE --- */
-.options.show {
-  opacity:1;
-  transform: translateY(0) scale(1);
-  pointer-events:auto;
+.middle{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:20px;
+  align-items:center;
+  margin-bottom:24px;
 }
 
-/* --- options upgraded --- */
-.option {
-  padding:12px;
-  border-radius:8px;
-  margin:4px;
-  cursor:pointer;
-
-  transition: all 0.15s ease;
+.midBox{
+  background:rgba(255,255,255,.06);
+  padding:18px;
+  border-radius:18px;
 }
 
-.option:hover {
-  background: rgba(96,165,250,0.15);
-  transform: translateX(4px);
+.midLabel{
+  font-size:12px;
+  color:#94a3b8;
+  margin-bottom:8px;
 }
 
-.option.active {
-  background: rgba(96,165,250,0.25);
-  font-weight:600;
+.midVal{
+  font-size:34px;
+  font-weight:800;
 }
 
-/* --- hidden --- */
-.hidden { display:none; }
-
-/* --- glow --- */
-.glow-text {
-  background: linear-gradient(90deg, #60a5fa, #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: glowShift 4s ease-in-out infinite alternate;
+.vs{
+  font-size:28px;
+  font-weight:900;
+  color:#60a5fa;
+  text-align:center;
+  line-height:1.2;
 }
 
-@keyframes glowShift {
-  from { filter: drop-shadow(0 0 10px rgba(96,165,250,0.4)); }
-  to { filter: drop-shadow(0 0 25px rgba(167,139,250,0.7)); }
-}
-/* ===== ADD START ===== */
-
-.vs-wrapper { margin-top:30px; }
-
-.race-bar {
-  height:14px;
-  border-radius:10px;
-  background:#1f2937;
-  overflow:hidden;
-  margin-bottom:10px;
+.vsSub{
+  font-size:13px;
+  color:#94a3b8;
+  font-weight:500;
+  margin-top:8px;
 }
 
-.race-fill {
-  height:100%;
-  width:0%;
-  transition:width 1s ease;
+.midInsight{
+  text-align:center;
+  color:#cbd5e1;
+  font-size:15px;
+  margin-top:-8px;
+  margin-bottom:26px;
 }
 
-.tokens-bar {
-  background:linear-gradient(90deg,#6b7280,#9ca3af);
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
 }
 
-.ncu-bar {
-  background:linear-gradient(90deg,#3b82f6,#60a5fa);
+.card{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  padding:26px;
 }
 
-.meter-bar {
-  height:10px;
-  background:#1f2937;
-  border-radius:10px;
-  overflow:hidden;
+.win{
+  box-shadow:0 0 0 2px #22c55e inset;
 }
 
-.meter-fill {
-  height:100%;
-  width:0%;
-  transition:width 1s ease;
-  background:linear-gradient(90deg,#22c55e,#3b82f6,#ef4444);
+.model{
+  font-size:36px;
+  font-weight:800;
+  margin-bottom:18px;
 }
 
-.ncu-glow {
-  animation:pulseGlow 1s infinite alternate;
+.metrics{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:18px;
 }
 
-@keyframes pulseGlow {
-  from { text-shadow:0 0 8px rgba(96,165,250,0.5); }
-  to { text-shadow:0 0 22px rgba(96,165,250,1); }
-}
-/* hide old meaningless bars */
-.race-bar,
-.meter-bar {
-  display: none !important;
-}
-/* NCU branding */
-.ncu-core {
-  filter: drop-shadow(0 0 10px rgba(96,165,250,0.6));
+.metric{
+  background:rgba(255,255,255,.05);
+  border-radius:16px;
+  padding:16px;
 }
 
-/* ===== ADD END ===== */
+.label{
+  font-size:12px;
+  color:#94a3b8;
+  margin-bottom:8px;
+}
+
+.val{
+  font-size:42px;
+  font-weight:800;
+}
+
+.prompt{
+  background:rgba(255,255,255,.04);
+  padding:18px;
+  border-radius:16px;
+  min-height:170px;
+  line-height:1.5;
+  color:#e5e7eb;
+}
+
+@media(max-width:980px){
+  .grid{grid-template-columns:1fr;}
+  .middle{grid-template-columns:1fr;}
+  h1{font-size:40px;}
+}
 </style>
 </head>
 
-<body class="p-8">
+<body>
 
-<main class="max-w-6xl mx-auto grid gap-10">
+<h1>Token vs NCU Demo</h1>
 
-<h1 class="text-4xl md:text-5xl font-extrabold text-center mb-4">
-  <span class="text-white">Counting Tokens</span>
-  <span class="mx-3 text-gray-500">vs</span>
-  <span class="glow-text">Measuring Compute</span>
-</h1>
+<div class="top">
+<select id="scenario">
+<option value="same_tokens">Same Tokens → Different Compute</option>
+<option value="diff_tokens">Different Tokens → Same Compute</option>
+<option value="model">Same Compute → Different Models</option>
+</select>
 
-<div class="text-center text-gray-400 mb-6 text-sm">
-  Same tokens ≠ same work. See how compute actually behaves.
+<select id="task">
+<option value="simple">Simple</option>
+<option value="reasoning">Reasoning</option>
+<option value="multi">Multi-Step</option>
+<option value="agentic">Agentic</option>
+</select>
+
+<button onclick="runDemo()">Run Comparison</button>
 </div>
 
-<div class="grid md:grid-cols-3 gap-4">
+<div class="headline" id="headline">Ready</div>
 
-<div class="dropdown" id="modelGroup">
-  <div class="selected">GPT-5</div>
-  <div class="options hidden">
-    <div class="option active">GPT-5</div>
-    <div class="option">Claude</div>
-    <div class="option">Gemini</div>
-  </div>
+<div class="middle">
+<div class="midBox">
+<div class="midLabel">TOKEN DIFFERENCE</div>
+<div class="midVal" id="gapTokens">0</div>
 </div>
 
-<div class="dropdown" id="queryGroup">
-  <div class="selected">Simple</div>
-  <div class="options hidden">
-    <div class="option active">Simple</div>
-    <div class="option">Reasoning</div>
-    <div class="option">Multitasking</div>
-    <div class="option">Agentic</div>
-  </div>
+<div class="vs">
+  TOKENS vs COMPUTE
+  <div class="vsSub">Same words can need more processing</div>
 </div>
 
-<div class="dropdown" id="scenarioGroup">
-  <div class="selected">Scenario A — Same tokens, different work</div>
-  <div class="options hidden">
-    <div class="option active">Scenario A — Same tokens, different work</div>
-    <div class="option">Scenario B — Different tokens, same work</div>
-    <div class="option">Scenario C — Same task, different models</div>
-    <div class="option">Scenario D — Tool usage increases compute</div>
-    <div class="option">Scenario E — Retries inflate compute</div>
-    <div class="option">Scenario F — Multi-step reasoning explosion</div>
-  </div>
+<div class="midBox">
+<div class="midLabel">COMPUTE DIFFERENCE</div>
+<div class="midVal" id="gapNcu">0</div>
+</div>
+</div>
+<div class="midInsight" id="midInsight">
+Token counts may look identical while compute effort changes significantly.
+</div>
+
+<div class="grid">
+
+<div class="card" id="leftCard">
+<div class="model" id="l_model">Left</div>
+
+<div class="metrics">
+<div class="metric">
+<div class="label">TOKENS</div>
+<div class="val" id="l_tokens">0</div>
+</div>
+
+<div class="metric">
+<div class="label">NCU</div>
+<div class="val" id="l_ncu">0</div>
+</div>
+</div>
+
+<div class="prompt" id="l_prompt">Awaiting comparison...</div>
+</div>
+
+<div class="card" id="rightCard">
+<div class="model" id="r_model">Right</div>
+
+<div class="metrics">
+<div class="metric">
+<div class="label">TOKENS</div>
+<div class="val" id="r_tokens">0</div>
+</div>
+
+<div class="metric">
+<div class="label">NCU</div>
+<div class="val" id="r_ncu">0</div>
+</div>
+</div>
+
+<div class="prompt" id="r_prompt">Awaiting comparison...</div>
 </div>
 
 </div>
-
-<div class="dropdown mt-4" id="promptGroup">
-  <div class="selected">Summarization</div>
-  <div class="options hidden">
-    <div class="option active">Summarization</div>
-    <div class="option">Translation</div>
-    <div class="option">Reasoning</div>
-    <div class="option">Multitasking</div>
-    <div class="option">Agentic Workflow</div>
-  </div>
-</div>
-
-<button id="runBtn" class="mt-4 bg-blue-500 px-4 py-2 rounded">
-Run Demo
-</button>
-
-<div id="outputFlow"></div>
-
-</main>
 
 <script>
+function animateValue(id,endValue,decimals=0){
+  const el=document.getElementById(id);
+  const start=0;
+  const duration=700;
+  let startTime=null;
 
-document.addEventListener("DOMContentLoaded", () => {
-
-function setupDropdown(id){
-  const g = document.getElementById(id)
-  if(!g) return
-
-  const s = g.querySelector(".selected")
-  const o = g.querySelector(".options")
-
-  s.onclick = (e)=>{
-    e.stopPropagation()
-
-    document.querySelectorAll(".options").forEach(el=>{
-      if(el !== o){
-        el.classList.remove("show")
-        el.classList.add("hidden")
-      }
-    })
-
-    o.classList.toggle("hidden")
-    setTimeout(()=>o.classList.toggle("show"),10)
+  function frame(t){
+    if(!startTime) startTime=t;
+    const progress=Math.min((t-startTime)/duration,1);
+    const val=start+(endValue-start)*progress;
+    el.innerText=Number(val).toFixed(decimals);
+    if(progress<1) requestAnimationFrame(frame);
   }
 
-  o.querySelectorAll(".option").forEach(opt=>{
-    opt.onclick = (e)=>{
-      e.stopPropagation()
-
-      o.querySelectorAll(".option").forEach(el=>el.classList.remove("active"))
-      opt.classList.add("active")
-
-      s.innerText = opt.innerText
-
-      o.classList.remove("show")
-      o.classList.add("hidden")
-    }
-  })
+  requestAnimationFrame(frame);
 }
 
-["modelGroup","queryGroup","scenarioGroup","promptGroup"].forEach(setupDropdown)
+async function runDemo(){
+  const scenario=document.getElementById("scenario").value;
+  const task=document.getElementById("task").value;
 
-document.addEventListener("click",()=>{
-  document.querySelectorAll(".options").forEach(o=>{
-    o.classList.remove("show")
-    o.classList.add("hidden")
-  })
-})
+  const res=await fetch("/run",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({scenario,task})
+  });
 
-function animateValue(id, value, decimals = 0){
-  const el = document.getElementById(id)
-  if(!el) return
+  const d=await res.json();
 
-  let obj = {v:0}
+  document.getElementById("headline").innerText=d.headline;
 
-  gsap.to(obj,{
-    v:value,
-    duration:1,
-    onUpdate:()=>{
-      el.innerText = decimals 
-        ? obj.v.toFixed(decimals)
-        : Math.round(obj.v)
-    }
-  })
-}
-function renderFromBackend(data){
+  document.getElementById("l_model").innerText=d.left.model;
+  document.getElementById("r_model").innerText=d.right.model;
 
-  const r = data.result_a
-  
-    const tokens = r.raw_tokens
-  const effective = r.effective_tokens
-  const ncu = r.ncu
+  document.getElementById("l_prompt").innerText=d.left.prompt;
+  document.getElementById("r_prompt").innerText=d.right.prompt;
 
-  const tokenCost = r.token_cost
-  const ncuCost = r.ncu_cost
+  animateValue("l_tokens", d.left.tokens, 0);
+  animateValue("r_tokens", d.right.tokens, 0);
 
-  const ratio_val = ncu / (tokens || 1)
+  animateValue("l_ncu", d.left.ncu, 2);
+  animateValue("r_ncu", d.right.ncu, 2);
 
-  const container = document.getElementById("outputFlow")
+  const tokenGap=Math.abs(d.left.tokens-d.right.tokens);
+  const ncuGap=Math.abs(d.left.ncu-d.right.ncu);
 
-  container.innerHTML = `
-  <div class="mt-10">
-
-    <div class="bg-[#0f172a] border border-blue-500 rounded-xl p-6 text-center mb-6">
-      <div class="text-xs text-blue-300 mb-1">TRUE COMPUTE</div>
-      <div class="text-5xl font-extrabold text-blue-400 ncu-core">${ncu}</div>
-      <div class="text-sm text-blue-300 mt-2">NCU — Normalized Compute Unit</div>
-      <div class="text-xs text-yellow-400 mt-2 font-semibold">
-  ⚡ <span id="ampVal">0</span>x efficiency
-</div>
-      <div class="text-xs text-gray-400 mt-2">
-        Inflation: ${r.inflation_factor}x | Effective Tokens: ${effective}
-      </div>
-    </div>
-
-    <div class="mt-6">
-
-  <!-- TOKENS -->
-  <div class="mb-4">
-    <div class="flex justify-between text-xs text-gray-400 mb-1">
-      <span>TOKENS</span>
-      <span id="tokensLabel">0</span>
-    </div>
-
-    <div class="h-3 bg-[#1f2937] rounded">
-      <div id="tokensBar"
-           class="h-3 rounded bg-gradient-to-r from-gray-400 to-gray-500"
-           style="width:0%">
-      </div>
-    </div>
-  </div>
-
-  <!-- NCU -->
-  <div class="mb-4">
-    <div class="flex justify-between text-xs text-blue-400 mb-1">
-      <span>NCU (Actual Compute)</span>
-      <span id="ncuLabel">0</span>
-    </div>
-
-    <div class="h-3 bg-[#1f2937] rounded">
-      <div id="ncuBar"
-           class="h-3 rounded bg-gradient-to-r from-blue-500 to-blue-400"
-           style="width:0%">
-      </div>
-    </div>
-  </div>
-
-</div>
-      <div class="mt-4 text-center text-sm font-semibold text-yellow-400">
-        Savings: ${r.savings_percent > 0 ? "+" : ""}${r.savings_percent}%
-      </div>
-
-    </div>
-
-  </div>
-  <div class="mt-8 border border-blue-500 rounded-xl p-6">
-
-  <div class="text-center text-blue-400 mb-4 font-semibold">
-    Tokens vs Actual Compute
-  </div>
-
-  <div class="grid grid-cols-2 gap-4">
-
-    <!-- TOKENS -->
-    <div class="bg-[#111827] p-4 rounded border border-gray-700">
-      <div class="text-xs text-gray-400 mb-1">TOKENS</div>
-      <div id="cmpTokens" class="text-2xl font-bold">0</div>
-      <div id="cmpTokenCost" class="text-xs text-gray-500 mt-1">Cost: $0</div>
-    </div>
-
-    <!-- NCU -->
-    <div class="bg-[#111827] p-4 rounded border border-blue-500">
-      <div class="text-xs text-blue-400 mb-1">NCU (Actual Compute)</div>
-      <div id="cmpNCU" class="text-2xl font-extrabold text-blue-400">0</div>
-      <div id="cmpNCUCost" class="text-xs text-blue-300 mt-1">Cost: $0</div>
-    </div>
-
-  </div>
-
-  <div id="cmpInsight" class="mt-4 text-center text-sm font-semibold text-yellow-400"></div>
-
-</div>
-`
-
-  // animateValue("tokensVal", tokens, 0)
-
-// STEP 1 — animate values cleanly
-setTimeout(()=>{
-
-  animateValue("tokensVal", tokens, 0)
-
-  // ⚡ ADD THIS (DO NOT REMOVE ANYTHING)
- const efficiency = tokenCost / (ncuCost || 1)
-animateValue("ampVal", efficiency, 2)
-
-},200)
-
-
-// STEP 2 — visual emphasis (optional polish)
-setTimeout(()=>{
-
-  const t = document.getElementById("tokensVal")
-  if(t){
-    t.style.opacity = "0.6"
-    t.style.transform = "scale(0.95)"
+  if(tokenGap === 0 && ncuGap > 0){
+    document.getElementById("midInsight").innerText =
+      "Same token output, but compute usage increased.";
+  }
+  else if(tokenGap > 0 && ncuGap === 0){
+    document.getElementById("midInsight").innerText =
+      "Different token counts, but compute demand stayed stable.";
+  }
+  else{
+    document.getElementById("midInsight").innerText =
+      "Both token count and compute changed.";
   }
 
-},1000)
+  animateValue("gapTokens", tokenGap, 0);
+  animateValue("gapNcu", ncuGap, 2);
 
+  document.getElementById("leftCard").classList.remove("win");
+  document.getElementById("rightCard").classList.remove("win");
 
-// STEP 3 — bars animation (aligned with data)
-setTimeout(()=>{
-
-  const maxVal = Math.max(tokens, ncu)
-
-  const tBar = document.getElementById("tokensBar")
-  const nBar = document.getElementById("ncuBar")
-
-  if(tBar && nBar){
-
-    tBar.style.width = (tokens/maxVal)*100 + "%"
-    nBar.style.width = (ncu/maxVal)*100 + "%"
-
-    document.getElementById("tokensLabel").innerText = tokens
-    document.getElementById("ncuLabel").innerText = ncu
-
-    if(ncu > tokens){
-      nBar.classList.add("ncu-glow")
-    }
+  if(d.left.ncu < d.right.ncu){
+    document.getElementById("leftCard").classList.add("win");
+  }else if(d.right.ncu < d.left.ncu){
+    document.getElementById("rightCard").classList.add("win");
   }
-
-},300)
-setTimeout(()=>{
-
-  const tEl = document.getElementById("cmpTokens")
-  const nEl = document.getElementById("cmpNCU")
-  const tCostEl = document.getElementById("cmpTokenCost")
-  const nCostEl = document.getElementById("cmpNCUCost")
-  const insightEl = document.getElementById("cmpInsight")
-
-  if(!tEl || !nEl || !tCostEl || !nCostEl || !insightEl){
-    console.log("Comparison elements not found")
-    return
-  }
-
-  animateValue("cmpTokens", tokens, 0)
-animateValue("cmpNCU", ncu, 2)
-
-const displayTokenCost = tokenCost * 10
-const displayNCUCost = ncuCost * 10
-
-tCostEl.innerText = "Cost: $" + displayTokenCost.toFixed(2)
-nCostEl.innerText = "Cost: $" + displayNCUCost.toFixed(2)
- const savings = ((tokenCost - ncuCost) / tokenCost) * 100
-const delta = tokenCost - ncuCost
-const efficiency = tokenCost / (ncuCost || 1)
-
-let insight = ""
-
-if(ncuCost < tokenCost){
-  insight = `+${savings.toFixed(1)}% savings | $${(delta * 10).toFixed(2)} saved | ${efficiency.toFixed(2)}x more efficient`
-} else {
-  insight = `NCU not optimal | $${Math.abs(delta).toFixed(2)} extra | ${efficiency.toFixed(2)}x`
 }
-
-insightEl.innerText = insight
-},200)
-}
-document.getElementById("runBtn").onclick = async () => {
-
-  console.log("BUTTON CLICKED")
-
-  const scenarioText = document.querySelector("#scenarioGroup .selected").innerText
-  const modelText = document.querySelector("#modelGroup .selected").innerText
-  const queryText = document.querySelector("#queryGroup .selected").innerText
-
-  const scenario = scenarioText.includes("B") ? "B" : "A"
-
-  let model = "chatgpt"
-  if (modelText.toLowerCase().includes("claude")) model = "claude"
-  else if (modelText.toLowerCase().includes("gemini")) model = "gemini"
-
-  let query = "simple"
-  if (queryText.toLowerCase().includes("reason")) query = "average"
-  else if (queryText.toLowerCase().includes("multi")) query = "multi"
-  else if (queryText.toLowerCase().includes("agent")) query = "agentic"
-
-  const res = await fetch("/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario, model, query })
-  })
-
-  const data = await res.json()
-
-  console.log("DATA:", data)
-
-  renderFromBackend(data)
-}
-
-
-})
 </script>
-
-<div class="fixed bottom-4 right-4 text-xs text-blue-400 opacity-60">
-  Powered by NCU
-</div>
 
 </body>
 </html>
