@@ -45,4 +45,4 @@ Many companies underestimate long-term token pricing costs. This tool helps comp
 
 ## Author
 
-Manish Shadrach
+Shadrach Manish
