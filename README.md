@@ -1,3 +1,4 @@
+<img width="1902" height="862" alt="Screenshot 2026-04-21 121210" src="https://github.com/user-attachments/assets/06ff6b88-1b57-4416-be5f-f352f91957b5" />
 # AI Infrastructure Cost Simulator
 
 An interactive web application that compares token-based AI pricing models with compute-based infrastructure costs (NCU/GPU models).
