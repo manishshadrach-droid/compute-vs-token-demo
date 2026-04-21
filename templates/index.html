@@ -26,6 +26,15 @@ h1{
   margin-bottom:28px;
   text-align:center;
 }
+.subText{
+  max-width:980px;
+  margin: -10px auto 30px auto;
+  text-align:center;
+  font-size:18px;
+  line-height:1.6;
+  color:#cbd5e1;
+  font-weight:400;
+}
 
 .top{
   display:flex;
@@ -171,6 +180,18 @@ button:hover{
   color:#e5e7eb;
 }
 
+.queryPreview{
+  max-width:1000px;
+  margin:0 auto 24px auto;
+  background:rgba(255,255,255,.05);
+  padding:18px;
+  border-radius:16px;
+  color:#e5e7eb;
+  font-size:18px;
+  text-align:center;
+  line-height:1.5;
+}
+
 @media(max-width:980px){
   .grid{grid-template-columns:1fr;}
   .middle{grid-template-columns:1fr;}
@@ -181,23 +202,33 @@ button:hover{
 
 <body>
 
-<h1>Token vs NCU Demo</h1>
+<h1>Counting Tokens vs Measuring Compute</h1>
+
+<div class="subText">
+This demonstration shows how token-based measurements can fail by comparing them with Normalized Compute Units (NCU), a compute metric derived from FLOPS and normalized across different models.
+</div>
 
 <div class="top">
 <select id="scenario">
-<option value="same_tokens">Same Tokens → Different Compute</option>
-<option value="diff_tokens">Different Tokens → Same Compute</option>
-<option value="model">Same Compute → Different Models</option>
+  <option value="" selected disabled>Select a Demonstration</option>
+  <option value="same_tokens">Same Tokens → Different Compute</option>
+  <option value="diff_tokens">Different Tokens → Same Compute</option>
+  <option value="model">Same Compute → Different Models</option>
 </select>
 
-<select id="task">
-<option value="simple">Simple</option>
-<option value="reasoning">Reasoning</option>
-<option value="multi">Multi-Step</option>
-<option value="agentic">Agentic</option>
+<select id="task" onchange="previewQuery()">
+<option value="" selected disabled>Select Type of Query</option>
+<option value="simple">Simple Rewrite</option>
+<option value="reasoning">Reasoning Logic</option>
+<option value="multi">Multi-Step Analysis</option>
+<option value="agentic">Agent Workflow</option>
 </select>
 
 <button onclick="runDemo()">Run Comparison</button>
+</div>
+
+<div class="queryPreview" id="queryPreview">
+Prompt preview will appear here.
 </div>
 
 <div class="headline" id="headline">Ready</div>
@@ -278,6 +309,20 @@ function animateValue(id,endValue,decimals=0){
   }
 
   requestAnimationFrame(frame);
+}
+
+function previewQuery(){
+  const task=document.getElementById("task").value;
+  const box=document.getElementById("queryPreview");
+
+  const prompts = {
+    simple:"Rewrite this sentence in plain English: The company will commence operations next quarter.",
+    reasoning:"If 5 machines make 5 parts in 5 minutes, how long for 100 machines to make 100 parts?",
+    multi:"Analyze declining sales, identify causes, and recommend 3 actions.",
+    agentic:"Plan a 7-day business trip including flights, hotel, meetings, and cost savings."
+  };
+
+  box.innerText = prompts[task] || "Prompt preview will appear here.";
 }
 
 async function runDemo(){
